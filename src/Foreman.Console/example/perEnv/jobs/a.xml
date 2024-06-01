@@ -1,0 +1,8 @@
+<job handler="../echo.ps1">
+    <definition doStuff="true" color="salmon">
+        <print message="Hello, World!" />
+        <print message="Batman" />
+    </definition>
+    <pendingValues />
+    <pendingVariables />
+</job>

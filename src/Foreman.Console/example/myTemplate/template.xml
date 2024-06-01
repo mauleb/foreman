@@ -1,0 +1,5 @@
+<template>
+    <inputs>
+        <input key="envCode" />
+    </inputs>
+</template>

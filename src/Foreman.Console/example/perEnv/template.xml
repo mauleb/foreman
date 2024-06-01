@@ -1,0 +1,8 @@
+<template>
+    <inputs>
+        <input key="envCode" allowedValues="dev,test" />
+    </inputs>
+    <nestedTemplates>
+        <ref relativePath="../myTemplate" />
+    </nestedTemplates>
+</template>
