@@ -1,20 +1,34 @@
 <job handler="../echo.ps1">
-    <definition doStuff="true" color="salmon">
+    <definition color="salmon">
         <print />
         <print message="nice" />
+        <print message="lots of messages were printed" />
     </definition>
     <pendingValues>
-        <instance id="0" path="/job/print[1]" prop="message">
+        <value id="0" evalPath="/0/" type="definition" target="/job/print[1]" attribute="message">
             <fragment value="Current env: " />
             <fragment />
-        </instance>
+        </value>
+        <value id="1" evalPath="/0/" type="condition" target="2">
+            <fragment />
+            <fragment value="-" />
+            <fragment />
+        </value>
     </pendingValues>
     <pendingVariables>
-        <instance id="0" variable="@inputs/envCode">
-            <target type="value" id="0" index="2" />
-        </instance>
+        <variable key="inputs/envCode">
+            <target evalPath="/" type="condition" id="0" />
+            <target evalPath="/0/" type="value" id="0" index="1" />
+            <target evalPath="/0/" type="value" id="1" index="0" />
+            <target evalPath="/0/" type="value" id="1" index="2" />
+        </variable>
+        <variable key="a/messageCount">
+            <target evalPath="/0/" type="condition" id="1" />
+        </variable>
     </pendingVariables>
-    <conditions>
-        <!-- ?? -->
-    </conditions>
+    <pendingConditions>
+        <condition evalPath="/" id="0" operator="is" operand="dev" definitionPath="/job" />
+        <condition evalPath="/0/" id="1" operator="isNot" operand="0" definitionPath="/job/print[3]" />
+        <condition evalPath="/0/" id="2" operator="is" operand="dev-dev" definitionPath="/job/print[4]" />
+    </pendingConditions>
 </job>

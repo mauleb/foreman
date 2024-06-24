@@ -39,8 +39,8 @@ public static class ForemanExtensions {
         }
 
         return new SelectionPrompt<string>()
-            .Title(input.Name + "::")
-            .AddChoices(input.AllowedValues);
+            .Title(input.Key + "::")
+            .AddChoices(input.EnumerateAllowedValues());
     }
 }
 
@@ -65,31 +65,32 @@ public class RunCommand : AsyncCommand<RunCommandSettings> {
     public override async Task<int> ExecuteAsync(CommandContext context, RunCommandSettings settings) {
         var cwd = Environment.CurrentDirectory;
         string templatePath = Path.Join(cwd, settings.Template);
-        var template = ForemanTemplate.Load(templatePath);
 
-        Dictionary<string,string> declaredInputs = settings.GetInputCollection();
+        NewForemanExecutionOptions executionOptions = new() {
+            Template = ForemanTemplateDefinition.Load(templatePath),
+            Inputs = settings.GetInputCollection()
+        };
 
-        foreach (var input in template.Inputs) {
-            if (declaredInputs.ContainsKey(input.Name)) {
-                template.SetInput(input, declaredInputs[input.Name]);
-            } else {
-                string value = input.AllowedValues == null
-                    ? AnsiConsole.Ask<string>(input.Name + ":: ")
-                    : AnsiConsole.Prompt(input.BuildPrompt());
-                template.SetInput(input, value);
-            }
+        ForemanExecutionContext executionContext = new(executionOptions);
+        foreach (ForemanTemplateInput missingInput in executionContext.GetMissingInputs()) {
+            string value = missingInput.AllowedValues == null
+                ? AnsiConsole.Ask<string>(missingInput.Key + ":: ")
+                : AnsiConsole.Prompt(missingInput.BuildPrompt());
+            executionContext.SetTemplateInput(missingInput.Key, value);
         }
 
-        ForemanExecutionContext executionContext = template.BuildExecutionContext();
-        executionContext.OnVariableSet += (key, value) => {
-            AnsiConsole.WriteLine("DEFINED > " + key + "=" + value);
-        };
+        await executionContext.InvokeAsync();
 
-        executionContext.OnJobUpdated += (alias, status) => {
-            AnsiConsole.WriteLine($"[{alias}] -> {status}");
-        };
+        // ForemanExecutionContext executionContext = template.BuildExecutionContext();
+        // executionContext.OnVariableSet += (key, value) => {
+        //     AnsiConsole.WriteLine("DEFINED > " + key + "=" + value);
+        // };
 
-        await template.Invoke(executionContext);
+        // executionContext.OnJobUpdated += (alias, status) => {
+        //     AnsiConsole.WriteLine($"[{alias}] -> {status}");
+        // };
+
+        // await template.Invoke(executionContext);
 
         return 0;
     }

@@ -2,6 +2,11 @@
     <inputs>
         <input key="envCode" allowedValues="dev,test" />
     </inputs>
+    <jobs>
+        <ref relativePath="jobs/a.xml" />
+        <ref relativePath="jobs/b.xml" />
+        <ref relativePath="jobs/nested.alias.xml" />
+    </jobs>
     <nestedTemplates>
         <ref relativePath="../myTemplate" />
     </nestedTemplates>

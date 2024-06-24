@@ -1,0 +1,16 @@
+<job type="echo"
+    color="salmon"
+    when="@{inputs/envCode}@"
+    is="dev"
+>
+    <print message="Current env: @{inputs/envCode}@" />
+    <print message="nice" />
+    <print message="lots of messages were printed"
+        when="@{a/messageCount}@"
+        isNot="0"
+    />
+    <print message="hello"
+        when="@{inputs/envCode}@-@{inputs/envCode}@"
+        is="dev-dev"
+    />
+</job>

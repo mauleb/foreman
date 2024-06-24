@@ -1,24 +1,20 @@
 using System.Xml;
+using System.Xml.Serialization;
 
 namespace Foreman.Engine;
 
+[Serializable]
 public record ForemanTemplateInput {
-    public required string Name { get; init; }
-    public string[]? AllowedValues { get; init; }
-
-    public static ForemanTemplateInput Load(XmlNode node) {
-        var key = node.Attributes?.GetNamedItem("key");
-        var input = new ForemanTemplateInput() {
-            Name = key?.InnerText ?? ""
-        };
-
-        var allowed = node.Attributes?.GetNamedItem("allowedValues");
-        if (allowed != null) {
-            input = input with {
-                AllowedValues = allowed.InnerText.Split(",")
-            };
+    [XmlAttribute("key")]
+    public required string Key { get; init; }
+    [XmlAttribute("allowedValues")]
+    public string? AllowedValues { get; init; }
+    public IEnumerable<string> EnumerateAllowedValues() {
+        if (AllowedValues == null) {
+            return [];
         }
 
-        return input;
+        string[] items = AllowedValues.Split(",");
+        return items;
     }
 }
