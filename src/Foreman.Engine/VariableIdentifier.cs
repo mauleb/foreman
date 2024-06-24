@@ -13,4 +13,8 @@ public record VariableIdentifier {
             Key = parts[parts.Length - 1]
         };
     }
+
+    public override string ToString() {
+        return string.Format("{0}/{1}",Namespace,Key);
+    }
 }

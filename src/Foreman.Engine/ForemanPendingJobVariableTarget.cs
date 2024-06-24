@@ -13,4 +13,5 @@ public record ForemanPendingJobVariableTarget {
     public required string Id { get; init; }
     [XmlAttribute("index")]
     public string? Index { get; init; }
+    public bool Disabled { get; set; } = false;
 }
