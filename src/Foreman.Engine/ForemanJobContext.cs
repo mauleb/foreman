@@ -129,6 +129,12 @@ public class ForemanJobContext {
         Console.WriteLine(output);
     }
 
+    internal void Error(string template, params object[] parts) {
+        string message = string.Format(template, parts);
+        string output = string.Format("[{0}] {1}", JobAlias, message);
+        Console.Error.WriteLine(output);
+    }
+
     public void ResolveVariables(string @namespace, Dictionary<string,string> values) {
         foreach (var kvp in values) {
             VariableIdentifier id = new() {
@@ -173,6 +179,8 @@ public class ForemanJobContext {
             string resolvedHandlerPath = Path.Join(jobDirectory, _job.RelativeHandlerPath);
             using PowerShell shell = PowerShell.Create();
             shell.AddScript(File.ReadAllText(resolvedHandlerPath));
+            shell.AddParameter("Configuration",job.OuterXml);
+            shell.AddParameter("Context","{}"); // TODO: real context
             var output = await shell.InvokeAsync();
             var result = output.Last();
 

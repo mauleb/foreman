@@ -1,21 +1,4 @@
-﻿// using System.Management.Automation;
-// using System.Text.Json;
-
-// using PowerShell shell = PowerShell.Create();
-// shell.AddScript(File.ReadAllText(@"/Users/maule/workspace/lsp-thesequel/src/Foreman.Console/example.ps1"));
-// var output = await shell.InvokeAsync();
-// var result = output.Last();
-
-// var dict = JsonSerializer.Deserialize<Dictionary<string,string>>(JsonSerializer.Serialize(result.BaseObject));
-// foreach (var kvp in dict ?? []) {
-//     Console.WriteLine("{0}={1}", kvp.Key, kvp.Value);
-// }
-
-// Console.WriteLine("Hello, World!");
-
-using System.Xml;
-
-using Foreman.Engine;
+﻿using Foreman.Engine;
 
 using Spectre.Console;
 using Spectre.Console.Cli;
@@ -89,8 +72,6 @@ public class RunCommand : AsyncCommand<RunCommandSettings> {
         // executionContext.OnJobUpdated += (alias, status) => {
         //     AnsiConsole.WriteLine($"[{alias}] -> {status}");
         // };
-
-        // await template.Invoke(executionContext);
 
         return 0;
     }

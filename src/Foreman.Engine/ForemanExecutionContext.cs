@@ -90,6 +90,19 @@ public class ForemanExecutionContext {
             foreach (var task in _runningJobs) {
                 if (task.IsCompleted) {
                     string alias = await task;
+
+                    if (_jobs[alias].Status == ForemanJobStatus.Failed) {
+                        _jobs[alias].Error("has failed");
+                        continue;
+                    }
+
+                    if (_jobs[alias].Status != ForemanJobStatus.Complete) {
+                        _jobs[alias].Error("INVALID TERMINAL STATUS: " + _jobs[alias].Status);
+                        continue;
+                    }
+
+                    _jobs[alias].Debug("has completed");
+
                     foreach (var dependentAlias in _jobs[alias].DependentJobs) {
                         _jobs[dependentAlias].ResolveVariables(
                             alias,
@@ -114,6 +127,9 @@ public class ForemanExecutionContext {
                 switch (job.Status) {
                     case ForemanJobStatus.Pending:
                         job.Debug("pending variables");
+                        break;
+                    case ForemanJobStatus.Failed:
+                        job.Debug("encountered an error");
                         break;
                     default:
                         job.Debug("INVALID STATUS: {0}", job.Status);
