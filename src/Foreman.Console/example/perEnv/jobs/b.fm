@@ -6,7 +6,7 @@
     <print message="Current env: @{inputs/envCode}@" />
     <print message="nice" />
     <print message="lots of messages were printed"
-        when="@{a/messageCount}@"
+        when="@{a/printed}@"
         isNot="0"
     />
     <print message="hello"

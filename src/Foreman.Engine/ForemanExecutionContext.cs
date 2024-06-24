@@ -6,6 +6,9 @@ public class ForemanExecutionContext {
     private readonly Dictionary<string,ForemanTemplateInput> _missingInputs = [];
     private readonly Dictionary<string,ForemanJobContext> _jobs = [];
 
+    private int _incompleteJobs;
+    private List<Task<string>> _runningJobs = [];
+
     public ForemanExecutionContext(ForemanExecutionOptions options) {
         _options = options;
 
@@ -29,6 +32,7 @@ public class ForemanExecutionContext {
         _jobs = jobDefinitions
             .Select(job => new KeyValuePair<string,ForemanJobContext>(job.JobAlias!,new(job)))
             .ToDictionary();
+        _incompleteJobs = _jobs.Count;
 
         foreach (var job in _jobs.Values) {
             foreach (var @namespace in job.GetVariableNamespaces()) {
@@ -50,7 +54,17 @@ public class ForemanExecutionContext {
         }
     }
 
-    private static readonly CancellationTokenSource s_invocationTokenSource = new();
+    private void InvokeJob(ForemanJobContext jobContext, List<Task<string>> jobs) {
+        if (jobContext.Status != ForemanJobStatus.Ready) {
+            throw new Exception("Attempted to invoke a job which is not Ready: " + jobContext.Status);
+        }
+
+        _incompleteJobs -= 1;
+        Task<string> jobExecution = jobContext.InvokeAsync(this);
+        jobs.Add(jobExecution);
+        jobContext.Debug("was started");
+    }
+
     public async Task InvokeAsync() {
         if (_hasExecuted) {
             throw new InvalidOperationException("Attempted to re run a execution context. Create a new context using the same template and try again.");
@@ -61,23 +75,19 @@ public class ForemanExecutionContext {
         }
 
         _hasExecuted = true;
-        int jobsRemaining = _jobs.Count;
-        List<Task<string>> runningJobs = [];
 
         foreach (var job in _jobs.Values) {
             job.ResolveVariables("inputs", _options.Inputs);
             if (job.Status == ForemanJobStatus.Ready) {
-                jobsRemaining -= 1;
-                Task<string> jobExecution = job.InvokeAsync(this);
-                runningJobs.Add(jobExecution);
+                InvokeJob(job, _runningJobs);
             }
         }
 
-        while (jobsRemaining > 0 && runningJobs.Count > 0) {
-            await Task.WhenAny(runningJobs);
+        while (_incompleteJobs > 0 && _runningJobs.Count > 0) {
+            await Task.WhenAny(_runningJobs);
             
             List<Task<string>> nextRound = [];
-            foreach (var task in runningJobs) {
+            foreach (var task in _runningJobs) {
                 if (task.IsCompleted) {
                     string alias = await task;
                     foreach (var dependentAlias in _jobs[alias].DependentJobs) {
@@ -87,9 +97,7 @@ public class ForemanExecutionContext {
                         );
 
                         if (_jobs[dependentAlias].Status == ForemanJobStatus.Ready) {
-                            jobsRemaining -= 1;
-                            Task<string> jobExecution = _jobs[dependentAlias].InvokeAsync(this);
-                            nextRound.Add(jobExecution);
+                            InvokeJob(_jobs[dependentAlias], nextRound);
                         }
                     }
                 } else {
@@ -97,7 +105,21 @@ public class ForemanExecutionContext {
                 }
             }
 
-            runningJobs = nextRound;
+            _runningJobs = nextRound;
+        }
+
+        if (_incompleteJobs > 0) {
+            Console.Error.WriteLine("Template did not run to completion.");
+            foreach (var job in _jobs.Values) {
+                switch (job.Status) {
+                    case ForemanJobStatus.Pending:
+                        job.Debug("pending variables");
+                        break;
+                    default:
+                        job.Debug("INVALID STATUS: {0}", job.Status);
+                        break;
+                }
+            }
         }
     }
 }

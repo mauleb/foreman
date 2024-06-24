@@ -1,3 +1,7 @@
+using System.Management.Automation;
+using System.Text.Json;
+using System.Xml;
+
 namespace Foreman.Engine;
 
 public class ForemanJobContext {
@@ -119,7 +123,7 @@ public class ForemanJobContext {
         _pendingVariables.Remove(identifier);
     }
 
-    private void Debug(string template, params object[] parts) {
+    internal void Debug(string template, params object[] parts) {
         string message = string.Format(template, parts);
         string output = string.Format("[{0}] {1}", JobAlias, message);
         Console.WriteLine(output);
@@ -141,6 +145,48 @@ public class ForemanJobContext {
     }
 
     internal async Task<string> InvokeAsync(ForemanExecutionContext context) {
+        XmlDocument job = _job.Definition;
+
+        foreach (var pendingValue in _pendingValues.Values) {
+            if (pendingValue.ValueType == "condition") {
+                continue;
+            }
+
+            XmlNode? node = job.SelectSingleNode(pendingValue.Target);
+            if (node == null) {
+                throw new Exception("Attempted to resolve a definition value at a path that does not exist");
+            }
+
+            if (pendingValue.AttributeName != null) {
+                XmlAttribute attr = job.CreateAttribute(pendingValue.AttributeName);
+                attr.Value = pendingValue.ResolvedValue;
+                node.Attributes?.Append(attr);
+            } else {
+                throw new NotImplementedException("Not attribute value injection");
+            }
+        }
+
+        _status = ForemanJobStatus.Running;
+
+        try {
+            string jobDirectory = Path.GetDirectoryName(_job.JobPath)!;
+            string resolvedHandlerPath = Path.Join(jobDirectory, _job.RelativeHandlerPath);
+            using PowerShell shell = PowerShell.Create();
+            shell.AddScript(File.ReadAllText(resolvedHandlerPath));
+            var output = await shell.InvokeAsync();
+            var result = output.Last();
+
+            string serialized = JsonSerializer.Serialize(result.BaseObject);
+            var deserialized = JsonSerializer.Deserialize<Dictionary<string,object>>(serialized)!;
+            Outputs = deserialized
+                .Select(kvp => new KeyValuePair<string,string>(kvp.Key, kvp.Value + ""))
+                .ToDictionary();
+            _status = ForemanJobStatus.Complete;
+        } catch (Exception ex) {
+            Console.WriteLine(ex);
+            _status = ForemanJobStatus.Failed;
+        }
+
         return JobAlias;
     }
 }

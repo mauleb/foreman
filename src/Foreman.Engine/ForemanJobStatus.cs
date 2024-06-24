@@ -2,5 +2,9 @@ namespace Foreman.Engine;
 
 public enum ForemanJobStatus {
     Pending,
-    Ready
+    Ready,
+    Running,
+    Failed,
+    Complete
+
 }

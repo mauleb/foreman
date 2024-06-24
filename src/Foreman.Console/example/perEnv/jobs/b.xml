@@ -22,7 +22,7 @@
             <target evalPath="/0/" type="value" id="1" index="0" />
             <target evalPath="/0/" type="value" id="1" index="2" />
         </variable>
-        <variable key="a/messageCount">
+        <variable key="a/printed">
             <target evalPath="/0/" type="condition" id="1" />
         </variable>
     </pendingVariables>
