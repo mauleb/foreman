@@ -66,7 +66,7 @@ public class RunCommand : AsyncCommand<RunCommandSettings> {
         var cwd = Environment.CurrentDirectory;
         string templatePath = Path.Join(cwd, settings.Template);
 
-        NewForemanExecutionOptions executionOptions = new() {
+        ForemanExecutionOptions executionOptions = new() {
             Template = ForemanTemplateDefinition.Load(templatePath),
             Inputs = settings.GetInputCollection()
         };
