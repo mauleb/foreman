@@ -83,7 +83,7 @@ public class ForemanExecutionContext {
             }
         }
 
-        while (_incompleteJobs > 0 && _runningJobs.Count > 0) {
+        while (_runningJobs.Count > 0) {
             await Task.WhenAny(_runningJobs);
             
             List<Task<string>> nextRound = [];
