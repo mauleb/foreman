@@ -1,5 +1,3 @@
-using System.Xml;
-
 using Foreman.Engine;
 
 namespace Engine.ForemanJobTests;
@@ -15,10 +13,11 @@ public class ParseJobData {
         </job>
         """;
 
-        XmlDocument document = new();
-        document.LoadXml(data);
-
-        var job = NewForemanJob.ParseJobData(document);
-        Assert.Empty(job.ContentErrors);
+        var document = TestDocument.FromData(data);
+        var job = ForemanJobDefinition.ParseJobData(document);
+        
+        Assert.Empty(job.PendingConditions);
+        Assert.Empty(job.PendingValues);
+        Assert.Empty(job.PendingVariables);
     }
 }

@@ -22,13 +22,13 @@ public record ForemanJobDefinition {
     public required string RelativeHandlerPath { get; init; }
     [XmlArray("pendingValues")]
     [XmlArrayItem("value", typeof(ForemanPendingJobValue))]
-    public required ForemanPendingJobValue[] PendingValues { get; init; }
+    public required ForemanPendingJobValue[] PendingValues { get; init; } = [];
     [XmlArray("pendingVariables")]
     [XmlArrayItem("variable", typeof(ForemanPendingJobVariable))]
-    public required ForemanPendingJobVariable[] PendingVariables { get; init; }
+    public required ForemanPendingJobVariable[] PendingVariables { get; init; } = [];
     [XmlArray("pendingConditions")]
     [XmlArrayItem("condition", typeof(ForemanPendingJobCondition))]
-    public required ForemanPendingJobCondition[] PendingConditions { get; init; }
+    public required ForemanPendingJobCondition[] PendingConditions { get; init; } = [];
     private static XmlDocument ParseJobDefinition(XmlNode definition) {
         XmlDocument payload = new();
         XmlNode job = payload.CreateNode(XmlNodeType.Element, "job", "");
