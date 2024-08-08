@@ -6,8 +6,9 @@
         <ref relativePath="jobs/a.xml" />
         <ref relativePath="jobs/b.xml" />
         <ref relativePath="jobs/nested.alias.xml" />
+        <ref relativePath="jobs/deferred.xml" />
     </jobs>
     <nestedTemplates>
-        <ref relativePath="../myTemplate" />
+        <template key="myTemplate" type="embedded" relativePath="../myTemplate" />
     </nestedTemplates>
 </template>

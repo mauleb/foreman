@@ -1,8 +1,19 @@
-<job handler="../echo.ps1">
+<job type="adhoc" handler="../handlers/echo.ps1">
     <definition doStuff="true" color="salmon">
-        <print message="Hello, World!" />
+        <print message="Hello, From Nested Template!" />
         <print message="Batman" />
+        <print />
     </definition>
-    <pendingValues />
-    <pendingVariables />
+    <pendingValues>
+        <value id="0" evalPath="/" type="definition" target="/job/print[3]" attribute="message">
+            <fragment value="Current nested env: " />
+            <fragment />
+        </value>
+    </pendingValues>
+    <pendingVariables>
+        <variable key="inputs/envCode">
+            <target evalPath="/" type="value" id="0" index="1" />
+        </variable>
+    </pendingVariables>
+    <pendingConditions />
 </job>

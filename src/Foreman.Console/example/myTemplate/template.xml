@@ -2,4 +2,8 @@
     <inputs>
         <input key="envCode" />
     </inputs>
+    <jobs>
+        <ref relativePath="jobs/c.xml" />
+    </jobs>
+    <nestedTemplates />
 </template>

@@ -18,8 +18,12 @@ public record ForemanJobDefinition {
     }
     public string? JobPath { get; init; }
     public required XmlDocument Definition { get; init; }
+    [XmlAttribute("type")]
+    public required string JobExecutionType { get; init; }
+    [XmlAttribute("key")]
+    public string JobExecutionKey { get; init; } = string.Empty;
     [XmlAttribute("handler")]
-    public required string RelativeHandlerPath { get; init; }
+    public string RelativeHandlerPath { get; init; } = string.Empty;
     [XmlArray("pendingValues")]
     [XmlArrayItem("value", typeof(ForemanPendingJobValue))]
     public required ForemanPendingJobValue[] PendingValues { get; init; } = [];

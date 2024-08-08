@@ -5,25 +5,47 @@ public class ForemanExecutionContext {
     private readonly ForemanExecutionOptions _options;
     private readonly Dictionary<string,ForemanTemplateInput> _missingInputs = [];
     private readonly Dictionary<string,ForemanJobContext> _jobs = [];
+    private readonly Dictionary<string,ForemanNestedTemplateRef> _nestedTemplateRefs = [];
 
     private int _incompleteJobs;
     private List<Task<string>> _runningJobs = [];
 
+    private string? _templateDir;
+    public string TemplateDir {
+        get {
+            if (_templateDir == null) {
+                _templateDir = Path.GetDirectoryName(_options.Template.TemplatePath);
+                if (_templateDir == null) {
+                    throw new InvalidDataException("Template has undeclared path. Abort.");
+                }
+            }
+            return _templateDir;
+        }
+    }
+
+    public ForemanTemplateDefinition ResolveNestedTemplate(string key) {
+        if (!_nestedTemplateRefs.ContainsKey(key)) {
+            throw new Exception("Unrecognized template reference");
+        }
+
+        ForemanNestedTemplateRef @ref = _nestedTemplateRefs[key];
+        return @ref.ResolveTemplate(TemplateDir);
+    }
+
     public ForemanExecutionContext(ForemanExecutionOptions options) {
         _options = options;
+
+        _nestedTemplateRefs = _options.Template.NestedTemplateRefs
+            .Select(@ref => new KeyValuePair<string,ForemanNestedTemplateRef>(@ref.TemplateKey, @ref))
+            .ToDictionary();
 
         _missingInputs = _options.Template.Inputs
             .Where(input => _options.Inputs.ContainsKey(input.Key) == false)
             .Select(input => new KeyValuePair<string,ForemanTemplateInput>(input.Key, input))
             .ToDictionary();
 
-        string? templateDir = Path.GetDirectoryName(_options.Template.TemplatePath);
-        if (templateDir == null) {
-            throw new InvalidDataException("Template has undeclared path. Abort.");
-        }
-
         ForemanJobDefinition[] jobDefinitions = _options.Template.Jobs
-            .Select(reference => Path.Join(templateDir, reference.RelativePath))
+            .Select(reference => Path.Join(TemplateDir, reference.RelativePath))
             .Select(ForemanJobDefinition.ParseJobData)
             .ToArray();
         if (jobDefinitions.Any(job => job.JobAlias == null)) {

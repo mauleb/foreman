@@ -16,6 +16,10 @@ public record ForemanTemplateDefinition {
     [XmlArrayItem("ref", typeof(ForemanTemplateRef))]
     public required ForemanTemplateRef[] Jobs { get; init; }
 
+    [XmlArray("nestedTemplates")]
+    [XmlArrayItem("template", typeof(ForemanNestedTemplateRef))]
+    public required ForemanNestedTemplateRef[] NestedTemplateRefs { get; init; }
+
     private static readonly XmlSerializer s_serializer = new(typeof(ForemanTemplateDefinition));
     public static ForemanTemplateDefinition ParseTemplateData(XmlDocument document) {
         using XmlReader reader = new XmlNodeReader(document);

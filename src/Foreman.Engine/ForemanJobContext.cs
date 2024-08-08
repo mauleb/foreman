@@ -150,6 +150,63 @@ public class ForemanJobContext {
         }
     }
 
+    private async Task InvokeAdhocAsync(ForemanExecutionContext context, XmlDocument jobDefinition) {
+        if (string.IsNullOrEmpty(_job.RelativeHandlerPath)) {
+            Console.WriteLine("Undeclared handlerPath");
+            _status = ForemanJobStatus.Failed;
+            return;
+        }
+
+        try {
+            string jobDirectory = Path.GetDirectoryName(_job.JobPath)!;
+            string resolvedHandlerPath = Path.Join(jobDirectory, _job.RelativeHandlerPath);
+            using PowerShell shell = PowerShell.Create();
+            shell.AddScript(File.ReadAllText(resolvedHandlerPath));
+            shell.AddParameter("Configuration",jobDefinition.OuterXml);
+            shell.AddParameter("Context","{}"); // TODO: real context
+            var output = await shell.InvokeAsync();
+            var result = output.Last();
+
+            string serialized = JsonSerializer.Serialize(result.BaseObject);
+            var deserialized = JsonSerializer.Deserialize<Dictionary<string,object>>(serialized)!;
+            Outputs = deserialized
+                .Select(kvp => new KeyValuePair<string,string>(kvp.Key, kvp.Value + ""))
+                .ToDictionary();
+            _status = ForemanJobStatus.Complete;
+        } catch (Exception ex) {
+            Console.WriteLine(ex);
+            _status = ForemanJobStatus.Failed;
+        }
+
+        return;
+    }
+
+    private async Task InvokeTemplateAsync(ForemanExecutionContext context, XmlDocument jobDefinition) {
+        Dictionary<string,string> inputs = [];
+        foreach (XmlNode inputNode in jobDefinition.TrySelectNodes("/job/input")) {
+            string?[] attrs = inputNode.TrySelectAttributes("key","value");
+            if (attrs.Any(x => x is null)) {
+                throw new Exception("Encountered incomplete nested template");
+            }
+            inputs.TryAdd(attrs[0]!,attrs[1]!);
+        }
+
+        ForemanExecutionOptions nestedOptions = new() {
+            Template = context.ResolveNestedTemplate(_job.JobExecutionKey),
+            Inputs = inputs
+        };
+
+        ForemanExecutionContext nestedContext = new(nestedOptions);
+        if (nestedContext.GetMissingInputs().Any()) {
+            throw new Exception("Encountered nested template with missing inputs");
+        }
+
+        await nestedContext.InvokeAsync();
+        // TODO: template output support
+        Outputs = [];
+        _status = ForemanJobStatus.Complete;
+    }
+
     internal async Task<string> InvokeAsync(ForemanExecutionContext context) {
         XmlDocument job = _job.Definition;
 
@@ -174,27 +231,13 @@ public class ForemanJobContext {
 
         _status = ForemanJobStatus.Running;
 
-        try {
-            string jobDirectory = Path.GetDirectoryName(_job.JobPath)!;
-            string resolvedHandlerPath = Path.Join(jobDirectory, _job.RelativeHandlerPath);
-            using PowerShell shell = PowerShell.Create();
-            shell.AddScript(File.ReadAllText(resolvedHandlerPath));
-            shell.AddParameter("Configuration",job.OuterXml);
-            shell.AddParameter("Context","{}"); // TODO: real context
-            var output = await shell.InvokeAsync();
-            var result = output.Last();
+        Task execution = _job.JobExecutionType switch {
+            "adhoc" => InvokeAdhocAsync(context, job),
+            "template" => InvokeTemplateAsync(context, job),
+            _ => throw new ArgumentException("Unknown job execution type: " + _job.JobExecutionType)
+        };
 
-            string serialized = JsonSerializer.Serialize(result.BaseObject);
-            var deserialized = JsonSerializer.Deserialize<Dictionary<string,object>>(serialized)!;
-            Outputs = deserialized
-                .Select(kvp => new KeyValuePair<string,string>(kvp.Key, kvp.Value + ""))
-                .ToDictionary();
-            _status = ForemanJobStatus.Complete;
-        } catch (Exception ex) {
-            Console.WriteLine(ex);
-            _status = ForemanJobStatus.Failed;
-        }
-
+        await execution;
         return JobAlias;
     }
 }

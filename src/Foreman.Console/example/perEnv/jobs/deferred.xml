@@ -1,0 +1,16 @@
+<job type="template" key="myTemplate">
+    <definition>
+        <input key="envCode" />
+    </definition>
+    <pendingValues>
+        <value id="0" evalPath="/" type="definition" target="/job/input[1]" attribute="value">
+            <fragment />
+        </value>
+    </pendingValues>
+    <pendingVariables>
+        <variable key="inputs/envCode">
+            <target evalPath="/" type="value" id="0" index="0" />
+        </variable>
+    </pendingVariables>
+    <pendingConditions />
+</job>
